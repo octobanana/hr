@@ -1,8 +1,10 @@
 #include "parg.hh"
 using Parg = OB::Parg;
 
+#include "hr.hh"
+using Hr = OB::Hr;
+
 #include <string>
-#include <sstream>
 #include <iostream>
 #include <vector>
 #include <map>
@@ -14,8 +16,10 @@ int program_options(Parg& pg)
   pg.name("hr").version("0.1.0 (02.23.2018)");
   pg.description("a horizontal rule for the terminal");
   pg.usage("[flags] [options] [--] [arguments]");
+  pg.usage("[-s symbol] [-c color] [-r rows] [-b]");
   pg.usage("[-v|--version]");
   pg.usage("[-h|--help]");
+  pg.info("Colors", {"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"});
   pg.info("Exit Codes", {"0 -> normal", "1 -> error"});
   pg.info("Examples", {
     "hr --help",
@@ -26,12 +30,12 @@ int program_options(Parg& pg)
   // flags
   pg.set("help,h", "print the help output");
   pg.set("version,v", "print the program version");
+  pg.set("bold,b", "print colored output in bold");
 
   // options
-  pg.set("symbol,s", "-", "set the output symbol");
-  pg.set("color,c", "", "print the output in color");
-  pg.set("bold,b", "print colored output in bold");
-  pg.set("rows,r", "1", "number of rows to print");
+  pg.set("symbol,s", "-", "string", "set the output symbol");
+  pg.set("color,c", "", "color", "print the output in color");
+  pg.set("rows,r", "1", "integer", "number of rows to print");
 
   // pg.set_pos();
   // pg.set_stdin();
@@ -75,6 +79,16 @@ int main(int argc, char *argv[])
   {
     return 1;
   }
+
+  Hr hr;
+  hr.set_symbol(pg.get("symbol"));
+  hr.set_bold(pg.get<bool>("bold"));
+  hr.set_color(pg.get("color"));
+  hr.set_rows(pg.get<size_t>("rows"));
+  hr.render();
+
+  // output result
+  std::cout << hr.str();
 
   return 0;
 }

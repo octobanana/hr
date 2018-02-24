@@ -28,6 +28,7 @@ include_directories(
 
 set (SOURCES
   src/main.cc
+  src/hr.cc
 )
 
 set (HEADERS
