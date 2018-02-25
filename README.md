@@ -1,5 +1,8 @@
 # hr
 A horizontal rule for the terminal.  
+
+![hr example output](https://raw.githubusercontent.com/octobanana/hr/master/assets/hr.png)
+
 Outputs a repeated string of characters the width of the terminal. The color, boldness, string, and number of rows can be configured through arguments.  
 It is beneficial for visually dividing other programs output, such as in a shell script.  
 
