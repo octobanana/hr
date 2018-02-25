@@ -25,17 +25,32 @@ Hr& Hr::set_bold(bool bold)
   return *this;
 }
 
-Hr& Hr::set_color(std::string const& color)
+Hr& Hr::set_color(std::string const& fg_color, std::string const& bg_color)
 {
-  if (color.empty())
+  if (! fg_color.empty())
   {
-    return *this;
+    if (fg_colors_.find(fg_color) != fg_colors_.end())
+    {
+      fg_color_ = fg_colors_.at(fg_color);
+    }
+    else
+    {
+      throw std::runtime_error("invalid color '" + fg_color + "'\nsee --help for a list of valid colors");
+    }
   }
-  if (colors_.find(color) == colors_.end())
+
+  if (! bg_color.empty())
   {
-    throw std::runtime_error("invalid color '" + color + "'\nsee --help for a list of valid colors");
+    if (bg_colors_.find(bg_color) != bg_colors_.end())
+    {
+      bg_color_ = bg_colors_.at(bg_color);
+    }
+    else
+    {
+      throw std::runtime_error("invalid color '" + bg_color + "'\nsee --help for a list of valid colors");
+    }
   }
-  color_ = colors_.at(color);
+
   return *this;
 }
 
@@ -62,14 +77,7 @@ std::string Hr::render()
   }
 
   // set color
-  if (color_.empty())
-  {
-    out += line + "\n";
-  }
-  else
-  {
-    out += color_ + line + "\033[0m" + "\n";
-  }
+  out += fg_color_ + bg_color_ + line + "\033[0m" + "\n";
 
   // set rows
   if (rows_ > 1)

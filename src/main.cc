@@ -16,12 +16,15 @@ int program_options(Parg& pg)
   pg.name("hr").version("0.1.0 (02.23.2018)");
   pg.description("a horizontal rule for the terminal");
   pg.usage("[flags] [options] [--] [arguments]");
-  pg.usage("[-s symbol] [-c color] [-r rows] [-b]");
+  pg.usage("[-s symbol] [-c color] [-b color] [-r rows] [-B]");
   pg.usage("[-v|--version]");
   pg.usage("[-h|--help]");
   pg.info("Colors", {"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"});
   pg.info("Exit Codes", {"0 -> normal", "1 -> error"});
   pg.info("Examples", {
+    "hr -c magenta -s '~' -B",
+    "hr -c magenta -b cyan",
+    "hr -c green -r 2",
     "hr --help",
     "hr --version",
   });
@@ -30,11 +33,12 @@ int program_options(Parg& pg)
   // flags
   pg.set("help,h", "print the help output");
   pg.set("version,v", "print the program version");
-  pg.set("bold,b", "print colored output in bold");
+  pg.set("bold,B", "print colored output in bold");
 
   // options
   pg.set("symbol,s", "-", "string", "set the output symbol");
-  pg.set("color,c", "", "color", "print the output in color");
+  pg.set("color,c", "", "color", "set the output text color");
+  pg.set("background,b", "", "color", "set the output background color");
   pg.set("rows,r", "1", "integer", "number of rows to print");
 
   // pg.set_pos();
@@ -64,6 +68,12 @@ int program_options(Parg& pg)
     std::cout << pg.print_version();
     return 1;
   }
+  if (pg.get<size_t>("rows") > 1000)
+  {
+    std::cout << pg.print_help() << "\n";
+    std::cout << "Error: " << "invalid argument, rows must be > 0 and <= 1000" << "\n";
+    return -1;
+  }
   return 0;
 }
 
@@ -83,7 +93,7 @@ int main(int argc, char *argv[])
   Hr hr;
   hr.set_symbol(pg.get("symbol"));
   hr.set_bold(pg.get<bool>("bold"));
-  hr.set_color(pg.get("color"));
+  hr.set_color(pg.get("color"), pg.get("background"));
   hr.set_rows(pg.get<size_t>("rows"));
   hr.render();
 
