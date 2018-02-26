@@ -13,7 +13,7 @@ int program_options(Parg& pg);
 
 int program_options(Parg& pg)
 {
-  pg.name("hr").version("0.2.0 (02.24.2018)");
+  pg.name("hr").version("0.2.1 (26.02.2018)");
   pg.description("a horizontal rule for the terminal");
   pg.usage("[flags] [options] [--] [arguments]");
   pg.usage("[-s symbol] [-c color] [-b color] [-r rows] [-B]");
