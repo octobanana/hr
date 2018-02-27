@@ -22,6 +22,9 @@
 // SOFTWARE.
 //
 
+#ifndef OB_PARG_HH
+#define OB_PARG_HH
+
 #include <cstdlib>
 #include <cassert>
 #include <sstream>
@@ -32,157 +35,11 @@
 #include <string>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <streambuf>
-#include <iomanip>
 
 namespace OB
 {
 class Parg
 {
-private:
-  class Term
-  {
-  public:
-    static size_t height()
-    {
-      struct winsize w;
-      ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-      return w.ws_row;
-    }
-
-    static size_t width()
-    {
-      struct winsize w;
-      ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-      return w.ws_col;
-    }
-
-    static void size(size_t &width, size_t &height)
-    {
-      struct winsize w;
-      ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-      width = w.ws_col;
-      height = w.ws_row;
-    }
-  }; // class Term
-
-  class Widthbuf: public std::streambuf
-  {
-  public:
-    Widthbuf(size_t w, std::streambuf* s):
-      indent_width {0},
-      def_width {w},
-      width {w},
-      sbuf {s},
-      count {0}
-    {
-    }
-
-    ~Widthbuf()
-    {
-      overflow('\n');
-    }
-
-    void set_indent(size_t w)
-    {
-      if (w == 0)
-      {
-        prefix.clear();
-        indent_width = 0;
-        width = def_width;
-      }
-      else
-      {
-        indent_width += w;
-        prefix = std::string(indent_width, ' ');
-        width -= w;
-      }
-    }
-
-  private:
-    using string = std::basic_string<char_type>;
-
-    int_type overflow(int_type c)
-    {
-      if (traits_type::eq_int_type(traits_type::eof(), c))
-      {
-        return traits_type::not_eof(c);
-      }
-
-      switch (c)
-      {
-        case '\n':
-        case '\r':
-        {
-          buffer += c;
-          count = 0;
-          sbuf->sputn(prefix.c_str(), static_cast<std::streamsize>(indent_width));
-          int_type rc = sbuf->sputn(buffer.c_str(), static_cast<std::streamsize>(buffer.size()));
-          buffer.clear();
-          return rc;
-        }
-        case '\a':
-          return sbuf->sputc(c);
-        case '\t':
-          buffer += c;
-          count += tab_width - count % tab_width;
-          return c;
-        default:
-          if (count >= width)
-          {
-            size_t wpos = buffer.find_last_of(" \t");
-            if (wpos != string::npos)
-            {
-              sbuf->sputn(prefix.c_str(), static_cast<std::streamsize>(indent_width));
-              sbuf->sputn(buffer.c_str(), static_cast<std::streamsize>(wpos));
-              count = buffer.size()-wpos-1;
-              buffer = string(buffer, wpos+1);
-            }
-            else
-            {
-              sbuf->sputn(prefix.c_str(), static_cast<std::streamsize>(indent_width));
-              sbuf->sputn(buffer.c_str(), static_cast<std::streamsize>(buffer.size()));
-              buffer.clear();
-              count = 0;
-            }
-            sbuf->sputc('\n');
-          }
-          buffer += c;
-          ++count;
-          return c;
-      }
-    }
-
-    size_t indent_width;
-    size_t def_width;
-    size_t width;
-    std::streambuf* sbuf;
-    size_t count;
-    size_t tab_count;
-    static const int tab_width {4};
-    std::string prefix;
-    string buffer;
-  }; // class widthbuf
-
-  class Widthstream : public std::ostream
-  {
-  public:
-    Widthstream(size_t width, std::ostream &os):
-      std::ostream {&buf},
-      buf {width, os.rdbuf()}
-    {
-    }
-
-    Widthstream& indent(size_t w)
-    {
-      buf.set_indent(w);
-      return *this;
-    }
-
-  private:
-    Widthbuf buf;
-  }; // class Widthstream
-
 public:
   Parg(int _argc, char** _argv):
     argc_ {_argc}
@@ -243,14 +100,12 @@ public:
 
   std::string print_help() const
   {
-    auto width {Term::width()};
     std::stringstream out;
     if (! description_.empty())
     {
       out << name_ << ":" << "\n";
       std::stringstream ss;
-      Widthstream wout {width, ss};
-      wout.indent(2) << description_ << "\n";
+      out << "  " << description_ << "\n";
       out << ss.str() << "\n";
     }
 
@@ -280,8 +135,7 @@ public:
 
         for (auto const& t : e.text)
         {
-          Widthstream wout {width, out};
-          wout.indent(2) << t;
+          out << "  " << t << "\n";
         }
       }
     }
@@ -290,8 +144,7 @@ public:
     {
       out << "\nAuthor: " << "\n";
       std::stringstream ss;
-      Widthstream wout {width, ss};
-      wout.indent(2) << author_ << "\n";
+      ss << "  " << author_ << "\n";
       out << ss.str();
     }
 
@@ -346,8 +199,7 @@ public:
     }
 
     std::stringstream out;
-    Widthstream wout {Term::width(), out};
-    wout.indent(4) << _info << "\n";
+    out << "    " << _info << "\n";
     modes_.append(out.str());
   }
 
@@ -389,8 +241,7 @@ public:
     }
 
     std::stringstream out;
-    Widthstream wout {Term::width(), out};
-    wout.indent(4) << _info << "\n";
+    out << "    " << _info << "\n";
     options_.append(out.str());
   }
 
@@ -709,3 +560,5 @@ private:
   }
 }; // class Parg
 } // namespace OB
+
+#endif // OB_PARG_HH
