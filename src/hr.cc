@@ -64,10 +64,16 @@ Hr& Hr::set_rows(size_t rows)
   return *this;
 }
 
+Hr& Hr::set_width(size_t width)
+{
+  width_ = width;
+  return *this;
+}
+
 std::string Hr::render()
 {
-  width_ = term_width() / symbol_.size();
-  std::string line {repeat(symbol_, width_)};
+  size_t width = (width_ > 0 ? width_ : term_width()) / symbol_.size();
+  std::string line {repeat(symbol_, width)};
   std::string out;
 
   // set bold

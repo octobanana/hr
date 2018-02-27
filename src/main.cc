@@ -13,7 +13,7 @@ int program_options(Parg& pg);
 
 int program_options(Parg& pg)
 {
-  pg.name("hr").version("0.2.1 (26.02.2018)");
+  pg.name("hr").version("0.3.0 (27.02.2018)");
   pg.description("a horizontal rule for the terminal");
   pg.usage("[flags] [options] [--] [arguments]");
   pg.usage("[-s symbol] [-c color] [-b color] [-r rows] [-B]");
@@ -25,6 +25,7 @@ int program_options(Parg& pg)
     "hr -c magenta -s '~' -B",
     "hr -c magenta -b cyan",
     "hr -c green -r 2",
+    "hr -c cyan -w 8",
     "hr --help",
     "hr --version",
   });
@@ -40,6 +41,7 @@ int program_options(Parg& pg)
   pg.set("color,c", "", "color", "set the output text color");
   pg.set("background,b", "", "color", "set the output background color");
   pg.set("rows,r", "1", "integer", "number of rows to print");
+  pg.set("width,w", "0", "integer", "number of columns to print");
 
   // pg.set_pos();
   // pg.set_stdin();
@@ -74,6 +76,12 @@ int program_options(Parg& pg)
     std::cout << "Error: " << "invalid argument, rows must be > 0 and <= 1000" << "\n";
     return -1;
   }
+  if (pg.get<size_t>("width") > 1000)
+  {
+    std::cout << pg.print_help() << "\n";
+    std::cout << "Error: " << "invalid argument, width must be > 0 and <= 1000" << "\n";
+    return -1;
+  }
   return 0;
 }
 
@@ -95,6 +103,7 @@ int main(int argc, char *argv[])
   hr.set_bold(pg.get<bool>("bold"));
   hr.set_color(pg.get("color"), pg.get("background"));
   hr.set_rows(pg.get<size_t>("rows"));
+  hr.set_width(pg.get<size_t>("width"));
   hr.render();
 
   // output result

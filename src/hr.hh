@@ -16,6 +16,7 @@ public:
   Hr& set_bold(bool bold);
   Hr& set_color(std::string const& fg_color, std::string const& bg_color);
   Hr& set_rows(size_t rows);
+  Hr& set_width(size_t width);
   std::string render();
   std::string str() const;
 
