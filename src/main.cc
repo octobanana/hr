@@ -13,14 +13,13 @@ int program_options(Parg& pg);
 
 int program_options(Parg& pg)
 {
-  pg.name("hr").version("0.3.0 (27.02.2018)");
+  pg.name("hr").version("0.3.1 (27.02.2018)");
   pg.description("a horizontal rule for the terminal");
   pg.usage("[flags] [options] [--] [arguments]");
-  pg.usage("[-s symbol] [-c color] [-b color] [-r rows] [-B]");
+  pg.usage("[-s symbol] [-c color] [-b color] [-r rows] [-w width] [-B]");
   pg.usage("[-v|--version]");
   pg.usage("[-h|--help]");
   pg.info("Colors", {"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"});
-  pg.info("Exit Codes", {"0 -> normal", "1 -> error"});
   pg.info("Examples", {
     "hr -c magenta -s '~' -B",
     "hr -c magenta -b cyan",
@@ -29,6 +28,7 @@ int program_options(Parg& pg)
     "hr --help",
     "hr --version",
   });
+  pg.info("Exit Codes", {"0 -> normal", "1 -> error"});
   pg.author("Brett Robinson (octobanana) <octobanana.dev@gmail.com>");
 
   // flags
@@ -89,14 +89,8 @@ int main(int argc, char *argv[])
 {
   Parg pg {argc, argv};
   int pstatus {program_options(pg)};
-  if (pstatus > 0)
-  {
-    return 0;
-  }
-  else if (pstatus < 0)
-  {
-    return 1;
-  }
+  if (pstatus > 0) return 0;
+  if (pstatus < 0) return 1;
 
   Hr hr;
   hr.set_symbol(pg.get("symbol"));
