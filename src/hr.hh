@@ -1,6 +1,9 @@
 #ifndef OB_HR_HH
 #define OB_HR_HH
 
+#include "ansi_escape_codes.hh"
+namespace AEC = OB::ANSI_Escape_Codes;
+
 #include <string>
 #include <map>
 
@@ -30,25 +33,25 @@ private:
   std::string hr_;
 
   std::map<std::string, std::string> const fg_colors_ {
-    {"black", "\033[30m"},
-    {"red", "\033[31m"},
-    {"green", "\033[32m"},
-    {"yellow", "\033[33m"},
-    {"blue", "\033[34m"},
-    {"magenta", "\033[35m"},
-    {"cyan", "\033[36m"},
-    {"white", "\033[37m"}
+    {"black", AEC::fg_black},
+    {"red", AEC::fg_red},
+    {"green", AEC::fg_green},
+    {"yellow", AEC::fg_yellow},
+    {"blue", AEC::fg_blue},
+    {"magenta", AEC::fg_magenta},
+    {"cyan", AEC::fg_cyan},
+    {"white", AEC::fg_white}
   };
 
   std::map<std::string, std::string> const bg_colors_ {
-    {"black", "\033[40m"},
-    {"red", "\033[41m"},
-    {"green", "\033[42m"},
-    {"yellow", "\033[43m"},
-    {"blue", "\033[44m"},
-    {"magenta", "\033[45m"},
-    {"cyan", "\033[46m"},
-    {"white", "\033[47m"}
+    {"black", AEC::bg_black},
+    {"red", AEC::bg_red},
+    {"green", AEC::bg_green},
+    {"yellow", AEC::bg_yellow},
+    {"blue", AEC::bg_blue},
+    {"magenta", AEC::bg_magenta},
+    {"cyan", AEC::bg_cyan},
+    {"white", AEC::bg_white}
   };
 
   size_t term_width() const;

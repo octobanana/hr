@@ -13,16 +13,17 @@ int program_options(Parg& pg);
 
 int program_options(Parg& pg)
 {
-  pg.name("hr").version("0.3.2 (27.02.2018)");
+  pg.name("hr").version("0.4.0 (06.04.2018)");
   pg.description("a horizontal rule for the terminal");
   pg.usage("[flags] [options] [--] [arguments]");
   pg.usage("[-s symbol] [-c color] [-b color] [-r rows] [-w width] [-B]");
   pg.usage("[-v|--version]");
   pg.usage("[-h|--help]");
-  pg.info("Colors", {"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"});
+  pg.info("Colors", {"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white", "any hex color code"});
   pg.info("Examples", {
     "hr -c magenta -s '~' -B",
     "hr -c magenta -b cyan",
+    "hr -c #000 -b #ff33aa",
     "hr -c green -r 2",
     "hr -c cyan -w 8",
     "hr --help",
@@ -43,17 +44,7 @@ int program_options(Parg& pg)
   pg.set("rows,r", "1", "integer", "number of rows to print");
   pg.set("width,w", "0", "integer", "number of columns to print");
 
-  // pg.set_pos();
-  // pg.set_stdin();
-
   int status {pg.parse()};
-  // uncomment if at least one argument is expected
-  // if (status > 0 && pg.get_stdin().empty())
-  // {
-  //   std::cout << pg.print_help() << "\n";
-  //   std::cout << "Error: " << "expected arguments" << "\n";
-  //   return -1;
-  // }
   if (status < 0)
   {
     std::cout << pg.print_help() << "\n";
@@ -92,16 +83,24 @@ int main(int argc, char *argv[])
   if (pstatus > 0) return 0;
   if (pstatus < 0) return 1;
 
-  Hr hr;
-  hr.set_symbol(pg.get("symbol"));
-  hr.set_bold(pg.get<bool>("bold"));
-  hr.set_color(pg.get("color"), pg.get("background"));
-  hr.set_rows(pg.get<size_t>("rows"));
-  hr.set_width(pg.get<size_t>("width"));
-  hr.render();
+  try
+  {
+    Hr hr;
+    hr.set_symbol(pg.get("symbol"));
+    hr.set_bold(pg.get<bool>("bold"));
+    hr.set_color(pg.get("color"), pg.get("background"));
+    hr.set_rows(pg.get<size_t>("rows"));
+    hr.set_width(pg.get<size_t>("width"));
+    hr.render();
 
-  // output result
-  std::cout << hr.str();
+    // output result
+    std::cout << hr.str();
+  }
+  catch (std::exception const& e)
+  {
+    std::cerr << "Error: " << e.what() << "\n";
+    return 1;
+  }
 
   return 0;
 }

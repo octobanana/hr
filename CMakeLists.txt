@@ -28,6 +28,7 @@ include_directories(
 set (SOURCES
   src/main.cc
   src/hr.cc
+  src/ansi_escape_codes.cc
 )
 
 set (HEADERS
