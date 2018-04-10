@@ -38,19 +38,8 @@ Hr& Hr::set_color(std::string const& fg_color, std::string const& bg_color)
     }
     else
     {
-      std::smatch m;
-      if (std::regex_match(fg_color, m, std::regex("^#?((?:[0-9a-fA-F]{3}){1,2})$")))
-      {
-        std::string hexstr {m[1]};
-        if (hexstr.size() == 3)
-        {
-          std::stringstream ss;
-          ss << hexstr[0] << hexstr[0] << hexstr[1] << hexstr[1] << hexstr[2] << hexstr[2];
-          hexstr = ss.str();
-        }
-        fg_color_ = AEC::fg_true(hexstr);
-      }
-      else
+      fg_color_ = AEC::fg_true(fg_color);
+      if (fg_color_.empty())
       {
         throw std::runtime_error("invalid color '" + fg_color + "'\nsee --help for a list of valid colors");
       }
@@ -65,19 +54,8 @@ Hr& Hr::set_color(std::string const& fg_color, std::string const& bg_color)
     }
     else
     {
-      std::smatch m;
-      if (std::regex_match(bg_color, m, std::regex("^#?((?:[0-9a-fA-F]{3}){1,2})$")))
-      {
-        std::string hexstr {m[1]};
-        if (hexstr.size() == 3)
-        {
-          std::stringstream ss;
-          ss << hexstr[0] << hexstr[0] << hexstr[1] << hexstr[1] << hexstr[2] << hexstr[2];
-          hexstr = ss.str();
-        }
-        bg_color_ = AEC::bg_true(hexstr);
-      }
-      else
+      bg_color_ = AEC::bg_true(bg_color);
+      if (bg_color_.empty())
       {
         throw std::runtime_error("invalid color '" + bg_color + "'\nsee --help for a list of valid colors");
       }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <regex>
 
 namespace OB
 {
@@ -102,9 +103,31 @@ namespace ANSI_Escape_Codes
     return std::to_string(n);
   }
 
+  bool valid_hstr(std::string& str)
+  {
+    std::smatch m;
+    std::regex rx {"^#?((?:[0-9a-fA-F]{3}){1,2})$"};
+    if (std::regex_match(str, m, rx))
+    {
+      std::string hstr {m[1]};
+      if (hstr.size() == 3)
+      {
+        std::stringstream ss;
+        ss << hstr[0] << hstr[0] << hstr[1] << hstr[1] << hstr[2] << hstr[2];
+        hstr = ss.str();
+      }
+      str = hstr;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
   std::string fg_true(std::string x)
   {
-    if (x.size() != 6) return {};
+    if (! valid_hstr(x)) return {};
     std::string h1 {x.substr(0, 2)};
     std::string h2 {x.substr(2, 2)};
     std::string h3 {x.substr(4, 2)};
@@ -118,7 +141,7 @@ namespace ANSI_Escape_Codes
 
   std::string bg_true(std::string x)
   {
-    if (x.size() != 6) return {};
+    if (! valid_hstr(x)) return {};
     std::string h1 {x.substr(0, 2)};
     std::string h2 {x.substr(2, 2)};
     std::string h3 {x.substr(4, 2)};

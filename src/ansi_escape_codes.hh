@@ -79,6 +79,7 @@ namespace ANSI_Escape_Codes
   std::string fg_256(std::string x);
   std::string bg_256(std::string x);
   std::string htoi(std::string x);
+  bool valid_hstr(std::string& str);
   std::string fg_true(std::string x);
   std::string bg_true(std::string x);
   std::string cursor_set(size_t x, size_t y);
