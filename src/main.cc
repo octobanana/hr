@@ -13,7 +13,7 @@ int program_options(Parg& pg);
 
 int program_options(Parg& pg)
 {
-  pg.name("hr").version("0.4.0 (06.04.2018)");
+  pg.name("hr").version("0.4.1 (09.04.2018)");
   pg.description("a horizontal rule for the terminal");
   pg.usage("[flags] [options] [--] [arguments]");
   pg.usage("[-s symbol] [-c color] [-b color] [-r rows] [-w width] [-B]");
@@ -47,29 +47,29 @@ int program_options(Parg& pg)
   int status {pg.parse()};
   if (status < 0)
   {
-    std::cout << pg.print_help() << "\n";
+    std::cout << pg.help() << "\n";
     std::cout << "Error: " << pg.error() << "\n";
     return -1;
   }
   if (pg.get<bool>("help"))
   {
-    std::cout << pg.print_help();
+    std::cout << pg.help();
     return 1;
   }
   if (pg.get<bool>("version"))
   {
-    std::cout << pg.print_version();
+    std::cout << pg.name() << " v" << pg.version() << "\n";
     return 1;
   }
   if (pg.get<size_t>("rows") > 1000)
   {
-    std::cout << pg.print_help() << "\n";
+    std::cout << pg.help() << "\n";
     std::cout << "Error: " << "invalid argument, rows must be > 0 and <= 1000" << "\n";
     return -1;
   }
   if (pg.get<size_t>("width") > 1000)
   {
-    std::cout << pg.print_help() << "\n";
+    std::cout << pg.help() << "\n";
     std::cout << "Error: " << "invalid argument, width must be > 0 and <= 1000" << "\n";
     return -1;
   }
