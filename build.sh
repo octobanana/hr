@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-BUILD_TYPE="Debug"
+BUILD_TYPE="release"
 
 if [[ $# > 0 ]]; then
-  if [[ $1 == "-d" ]]; then
-    BUILD_TYPE="Debug"
-  elif [[ $1 == "-r" ]]; then
-    BUILD_TYPE="Release"
+  if [[ $1 == "--debug" ]]; then
+    BUILD_TYPE="debug"
+  elif [[ $1 == "--release" ]]; then
+    BUILD_TYPE="release"
   else
-    printf "usage: ./build.sh [-d|-r]\n";
+    printf "usage: ./build.sh [--debug|--release]\n";
     exit 1
   fi
 fi
@@ -19,17 +19,8 @@ source ./env.sh
 
 printf "\nBuilding ${APP} in ${BUILD_TYPE} mode\n"
 
-if [[ ${BUILD_TYPE} == "Debug" ]]; then
-  printf "\nCompiling ${APP}\n"
-  mkdir -p build/debug
-  cd build/debug
-  cmake ../../ -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-  time make
-
-elif [[ ${BUILD_TYPE} == "Release" ]]; then
-  printf "\nCompiling ${APP}\n"
-  mkdir -p build/release
-  cd build/release
-  cmake ../../ -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-  time make
-fi
+printf "\nCompiling ${APP}\n"
+mkdir -p build/${BUILD_TYPE}
+cd build/${BUILD_TYPE}
+cmake ../../ -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+time make
