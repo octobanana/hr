@@ -1,7 +1,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2018 Brett Robinson
+// Copyright (c) 2018-2019 Brett Robinson
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,29 +25,44 @@
 #ifndef OB_PARG_HH
 #define OB_PARG_HH
 
+#include "ob/string.hh"
+
+#include <unistd.h>
+
+#include <cctype>
+#include <cstddef>
 #include <cstdlib>
 #include <cassert>
+
+#include <string>
 #include <sstream>
 #include <iostream>
-#include <vector>
 #include <map>
+#include <vector>
 #include <utility>
-#include <string>
-#include <unistd.h>
-#include <sys/ioctl.h>
+#include <regex>
+#include <algorithm>
+#include <type_traits>
+#include <filesystem>
 
 namespace OB
 {
+
 class Parg
 {
 public:
-  Parg(int _argc, char** _argv):
-    argc_ {_argc}
+
+  Parg()
   {
+  }
+
+  Parg(int _argc, char** _argv)
+  {
+    argc_ = _argc;
     argvf(_argv);
   }
 
-  Parg& name(std::string const _name)
+  Parg& name(std::string const& _name)
   {
     name_ = _name;
     return *this;
@@ -58,7 +73,7 @@ public:
     return name_;
   }
 
-  Parg& version(std::string const _version)
+  Parg& version(std::string const& _version)
   {
     version_ = _version;
     return *this;
@@ -69,7 +84,7 @@ public:
     return version_;
   }
 
-  Parg& usage(std::string const _usage)
+  Parg& usage(std::string const& _usage)
   {
     usage_ += "  " + name_ + " " + _usage + "\n";
     return *this;
@@ -80,7 +95,7 @@ public:
     return usage_;
   }
 
-  Parg& description(std::string const _description)
+  Parg& description(std::string const& _description)
   {
     description_ = _description;
     return *this;
@@ -91,13 +106,13 @@ public:
     return description_;
   }
 
-  Parg& info(std::string const _title, std::vector<std::string> const _text)
+  Parg& info(std::string const& _title, std::vector<std::string> const& _text)
   {
     info_.emplace_back(info_pair{_title, _text});
     return *this;
   }
 
-  Parg& author(std::string const _author)
+  Parg& author(std::string const& _author)
   {
     author_ = _author;
     return *this;
@@ -171,7 +186,116 @@ public:
     return status_;
   }
 
-  void set(std::string _name, std::string _info)
+  int parse(int argc, char** argv)
+  {
+    if (is_stdin_)
+    {
+      pipe_stdin();
+    }
+    argc_ = argc;
+    argvf(argv);
+    status_ = parse_args(argc_, argv_);
+    return status_;
+  }
+
+  int parse(std::string const& str)
+  {
+    auto args = str_to_args(str);
+    status_ = parse_args(args.size(), args);
+    return status_;
+  }
+
+  std::vector<std::string> str_to_args(std::string const& str)
+  {
+    std::vector<std::string> args;
+
+    std::string const backslash {"\\"};
+
+    // parse str into arg vector as if it was parsed by the shell
+    for (std::size_t i = 0; i < str.size(); ++i)
+    {
+      std::string e {str.at(i)};
+
+      // default
+      if (e.find_first_not_of(" \n\t\"'") != std::string::npos)
+      {
+        bool escaped {false};
+        args.emplace_back("");
+        for (;i < str.size(); ++i)
+        {
+          e = str.at(i);
+          if (! escaped && e.find_first_of(" \n\t") != std::string::npos)
+          {
+            --i; // put back unmatched char
+            break;
+          }
+          else if (e == backslash)
+          {
+            escaped = true;
+          }
+          else if (escaped)
+          {
+            args.back() += e;
+            escaped = false;
+          }
+          else
+          {
+            args.back() += e;
+          }
+        }
+        continue;
+      }
+
+      // whitespace
+      else if (e.find_first_of(" \n\t") != std::string::npos)
+      {
+        for (;i < str.size(); ++i)
+        {
+          e = str.at(i);
+          if (e.find_first_not_of(" \n\t") != std::string::npos)
+          {
+            --i; // put back unmatched char
+            break;
+          }
+        }
+        continue;
+      }
+
+      // string
+      else if (e.find_first_of("\"'") != std::string::npos)
+      {
+        std::string quote {e};
+        bool escaped {false};
+        ++i; // skip start quote
+        args.emplace_back("");
+        for (;i < str.size(); ++i)
+        {
+          e = str.at(i);
+          if (! escaped && e == quote)
+          {
+            break;
+            // skip end quote
+          }
+          else if (e == backslash)
+          {
+            escaped = true;
+          }
+          else if (escaped)
+          {
+            args.back() += e;
+            escaped = false;
+          }
+          else
+          {
+            args.back() += e;
+          }
+        }
+      }
+    }
+    return args;
+  }
+
+  void set(std::string const& _name, std::string const& _info)
   {
     // sets a flag
     std::string delim {","};
@@ -228,7 +352,8 @@ public:
     modes_.append(out.str());
   }
 
-  void set(std::string _name, std::string _default, std::string _arg, std::string _info)
+  void set(std::string const& _name, std::string const& _default,
+    std::string const& _arg, std::string const& _info)
   {
     // sets an option
     std::string delim {","};
@@ -284,8 +409,25 @@ public:
     options_.append(out.str());
   }
 
-  template<class T>
-  T get(std::string const _key)
+  template<typename T,
+    std::enable_if_t<
+      std::is_same_v<T, std::string> ||
+      std::is_same_v<T, std::filesystem::path>,
+      int> = 0>
+  T get(std::string const& _key)
+  {
+    if (data_.find(_key) == data_.end())
+    {
+      throw std::logic_error("parg get '" + _key + "' is not defined");
+    }
+    return data_[_key].value_;
+  }
+
+  template<typename T,
+    std::enable_if_t<
+      std::is_integral_v<T>,
+      int> = 0>
+  T get(std::string const& _key)
   {
     if (data_.find(_key) == data_.end())
     {
@@ -298,16 +440,7 @@ public:
     return val;
   }
 
-  std::string get(std::string const _key)
-  {
-    if (data_.find(_key) == data_.end())
-    {
-      throw std::logic_error("parg get '" + _key + "' is not defined");
-    }
-    return data_[_key].value_;
-  }
-
-  bool find(std::string const _key) const
+  bool find(std::string const& _key) const
   {
     // key must exist
     if (data_.find(_key) == data_.end()) return false;
@@ -322,7 +455,22 @@ public:
 
   std::string get_pos() const
   {
-    return positional_;
+    std::string str;
+    if (positional_vec_.empty())
+    {
+      return str;
+    }
+    for (auto const& e : positional_vec_)
+    {
+      str += e + " ";
+    }
+    str.pop_back();
+    return str;
+  }
+
+  std::vector<std::string> get_pos_vec() const
+  {
+    return positional_vec_;
   }
 
   Parg& set_stdin(bool const _stdin = true)
@@ -346,6 +494,41 @@ public:
     return error_;
   }
 
+  std::vector<std::string> const& similar() const
+  {
+    return similar_;
+  }
+
+  std::size_t flags_found() const
+  {
+    std::size_t count {0};
+
+    for (auto const& e : data_)
+    {
+      if (e.second.mode_ && e.second.seen_)
+      {
+        ++count;
+      }
+    }
+
+    return count;
+  }
+
+  std::size_t options_found() const
+  {
+    std::size_t count {0};
+
+    for (auto const& e : data_)
+    {
+      if (! e.second.mode_ && e.second.seen_)
+      {
+        ++count;
+      }
+    }
+
+    return count;
+  }
+
   struct Option
   {
     std::string short_;
@@ -362,7 +545,8 @@ public:
   };
 
 private:
-  int argc_;
+
+  int argc_ {0};
   std::vector<std::string> argv_;
   std::string name_;
   std::string version_;
@@ -370,17 +554,19 @@ private:
   std::string description_;
   std::string modes_;
   std::string options_;
-  int options_indent_;
+  int options_indent_ {0};
   std::vector<info_pair> info_;
   std::string author_;
   std::map<std::string, Option> data_;
   std::map<std::string, std::string> flags_;
   bool is_positional_ {false};
   std::string positional_;
+  std::vector<std::string> positional_vec_;
   std::string stdin_;
-  bool is_stdin_;
+  bool is_stdin_ {false};
   int status_ {0};
   std::string error_;
+  std::vector<std::string> similar_;
 
   void argvf(char** _argv)
   {
@@ -406,11 +592,11 @@ private:
     return -1;
   }
 
-  std::vector<std::string> delimit(const std::string str, const std::string delim) const
+  std::vector<std::string> delimit(std::string const& str, std::string const& delim) const
   {
     std::vector<std::string> vtok;
-    size_t start {0};
-    size_t end = str.find(delim);
+    std::size_t start {0};
+    std::size_t end = str.find(delim);
     while (end != std::string::npos) {
       vtok.emplace_back(str.substr(start, end - start));
       start = end + delim.length();
@@ -420,7 +606,7 @@ private:
     return vtok;
   }
 
-  int parse_args(int _argc, std::vector<std::string> _argv)
+  int parse_args(int _argc, std::vector<std::string> const& _argv)
   {
     if (_argc < 1) return 1;
 
@@ -429,19 +615,12 @@ private:
     // loop through arg vector
     for (int i = 0; i < _argc; ++i)
     {
-      std::string const& tmp {_argv.at(static_cast<size_t>(i))};
+      std::string const& tmp {_argv.at(static_cast<std::size_t>(i))};
       // std::cerr << "ARG: " << i << " -> " << tmp << std::endl;
 
       if (dashdash)
       {
-        if (positional_.size() == 0)
-        {
-          positional_.append(tmp);
-        }
-        else
-        {
-          positional_.append(" " + tmp);
-        }
+        positional_vec_.emplace_back(tmp);
         continue;
       }
 
@@ -475,7 +654,7 @@ private:
           }
           else if (i + 1 < _argc)
           {
-            data_.at(flags_.at(c)).value_ = _argv.at(static_cast<size_t>(i + 1));
+            data_.at(flags_.at(c)).value_ = _argv.at(static_cast<std::size_t>(i + 1));
             data_.at(flags_.at(c)).seen_ = true;
             ++i;
           }
@@ -489,7 +668,7 @@ private:
         else
         {
           // short mode
-          for (size_t j = 1; j < tmp.size(); ++j)
+          for (std::size_t j = 1; j < tmp.size(); ++j)
           {
             std::string s {tmp.at(j)};
 
@@ -511,6 +690,8 @@ private:
             {
               // error
               error_ = "invalid flag '" + tmp + "'";
+              // find_similar(s);
+
               return -1;
             }
           }
@@ -555,7 +736,7 @@ private:
             }
             else if (i + 1 < _argc)
             {
-              data_.at(c).value_ = _argv.at(static_cast<size_t>(i + 1));
+              data_.at(c).value_ = _argv.at(static_cast<std::size_t>(i + 1));
               data_.at(c).seen_ = true;
               ++i;
             }
@@ -571,6 +752,7 @@ private:
         {
           // error
           error_ = "invalid option '" + tmp + "'";
+          find_similar(c);
           return -1;
         }
       }
@@ -584,27 +766,67 @@ private:
         }
         else
         {
-          if (positional_.size() == 0)
-          {
-            positional_.append(tmp);
-          }
-          else
-          {
-            positional_.append(" " + tmp);
-          }
+          positional_vec_.emplace_back(tmp);
         }
       }
       else
       {
         // error
         error_ = "no match for '" + tmp + "'";
+        find_similar(tmp);
         return -1;
       }
     }
 
     return 0;
   }
+
+  void find_similar(std::string const& name)
+  {
+    int const weight_max {8};
+    std::vector<std::pair<int, std::string>> dist;
+
+    for (auto const& [key, val] : data_)
+    {
+      int weight {0};
+
+      if (OB::String::starts_with(val.long_, name))
+      {
+        weight = 0;
+      }
+      else
+      {
+        weight = OB::String::damerau_levenshtein(name, val.long_, 1, 2, 3, 0);
+      }
+
+      if (weight < weight_max)
+      {
+        dist.emplace_back(weight, val.long_);
+      }
+    }
+
+    std::sort(dist.begin(), dist.end(),
+    [](auto const& lhs, auto const& rhs)
+    {
+      return (lhs.first == rhs.first) ?
+        (lhs.second.size() < rhs.second.size()) :
+        (lhs.first < rhs.first);
+    });
+
+    for (auto const& [key, val] : dist)
+    {
+      similar_.emplace_back(val);
+    }
+
+    size_t const similar_max {3};
+    if (similar_.size() > similar_max)
+    {
+      similar_.erase(similar_.begin() + similar_max, similar_.end());
+    }
+  }
+
 }; // class Parg
+
 } // namespace OB
 
 #endif // OB_PARG_HH
