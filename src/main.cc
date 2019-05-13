@@ -18,7 +18,7 @@ int program_options(Parg& pg);
 
 int program_options(Parg& pg)
 {
-  pg.name("hr").version("0.4.2 (09.04.2018)");
+  pg.name("hr").version("0.5.0 (13.05.2019)");
 
   pg.description("A horizontal rule for the terminal.");
 
