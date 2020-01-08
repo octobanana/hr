@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
     hr.height(pg.get<std::size_t>("rows"));
     hr.render();
 
-    std::cout << hr.str();
+    std::cout << "\r" << hr.str();
   }
   catch (std::exception const& e)
   {
